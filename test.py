@@ -56,14 +56,52 @@ async def getlogs(paths):
     return logfiles, servicenames
 
 
+async def getstats(paths):
+    # Path to Docker Compose file
+    compose_file = paths
+
+    # Get list of service names
+    result = subprocess.run(
+        ["/usr/bin/docker", "compose", "-f", compose_file, "ps"],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    stat = result.stdout.splitlines()
+    r = ""
+    for i in stat:
+        r += i + "\n"
+    return r
+
+
 TOKEN = ""
-admins = [263887960, 209702860]
+admins = []
 
 
 import telebot
 from telebot.async_telebot import AsyncTeleBot
 
 bot = AsyncTeleBot(TOKEN)
+
+
+@bot.message_handler(commands=["getstats"])
+async def get_stats(message):
+    if message.chat.id in admins:
+        path = message.text.split()
+        if len(path) > 1:
+            path = path[1]
+        fl = await find_compose_files()
+        if path not in fl:
+            await bot.reply_to(message, "no such path")
+            return
+        await bot.reply_to(message, f"getting stats on {path}")
+        stats = await getstats(path)
+
+        await bot.reply_to(
+            message,
+            stats,
+        )
+    else:
+        await bot.reply_to(message, "not allowed")
 
 
 @bot.message_handler(commands=["getpaths"])
