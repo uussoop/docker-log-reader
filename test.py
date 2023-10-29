@@ -62,14 +62,26 @@ async def getstats(paths):
 
     # Get list of service names
     result = subprocess.run(
-        ["/usr/bin/docker", "compose", "-f", compose_file, "ps"],
+        ["/usr/bin/docker", "compose", "-f", compose_file, "ps", "-q"],
         stdout=subprocess.PIPE,
         text=True,
     )
-    stat = result.stdout.splitlines()
     r = ""
-    for i in stat:
-        r += i + "\n"
+    services = result.stdout.splitlines()
+    docker_client = docker.from_env()
+    for service in services:
+        try:
+            # Get container from service name
+            container = docker_client.containers.get(service)
+            # Get stats
+            stats = container.status
+            name = container.attrs["Name"].replace("/", "")
+            # Print stats
+            r += f"{name} stats: {stats}\n"
+
+        except docker.errors.NotFound:
+            print(f"Container for {service} not found")
+
     return r
 
 
