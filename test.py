@@ -3,8 +3,14 @@ import docker.errors
 import subprocess
 
 import os
+import dotenv
 
-paths_towalk = []
+dotenv.load_dotenv()
+
+
+paths_towalk = os.getenv("TRAVERSE_PATHS", "/home").split(",")
+TOKEN = os.getenv("TOKEN")
+admins = [int(i) for i in os.getenv("ADMINS", "123").split(",")]
 
 
 async def find_compose_files():
@@ -83,10 +89,6 @@ async def getstats(paths):
             print(f"Container for {service} not found")
 
     return r
-
-
-TOKEN = ""
-admins = []
 
 
 import telebot
